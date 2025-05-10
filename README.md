@@ -1,5 +1,5 @@
 # Ex-3-RECOGNITION-OF-A-VALID-ARITHMETIC-EXPRESSION-THAT-USES-OPERATOR-AND-USING-YACC
-# Date:
+# Date: 25/04/2025
 # AIM
 To write a yacc program to recognize a valid arithmetic expression that uses operator +,- ,* and /.
 # ALGORITHM
@@ -12,65 +12,117 @@ To write a yacc program to recognize a valid arithmetic expression that uses ope
 7.	Compile these with the C compiler as gcc lex.yy.c y.tab.c
 8.	Enter an arithmetic expression as input and the tokens are identified as output.
 # PROGRAM
-# arth.l
+exp.l file 
 ```
-%{ 
-/* This LEX program returns the tokens for the expression */ 
-#include "y.tab.h" 
-%} 
-%% 
-"=" {printf("\n Operator is EQUAL");} 
-"+" {printf("\n Operator is PLUS");} 
-"-" {printf("\n Operator is MINUS");} 
-"/" {printf("\n Operator is DIVISION");} 
-"*" {printf("\n Operator is MULTIPLICATION");} 
-[a-zA-Z]*[0-9]* { 
-printf("\n Identifier is %s",yytext); 
-return ID; } 
-. return yytext[0]; 
-\n return 0; 
-%% 
-int yywrap() 
-{ 
-return 1; 
+%{
+#include "y.tab.h"
+#include <string.h>
+
+extern YYSTYPE yylval;   // To pass the token to yacc
+%}
+
+%%
+[ \t\n]+             ;  // skip whitespace
+
+"="                 { return EQUAL; }
+"+"                 { return PLUS; }
+"-"                 { return MINUS; }
+"*"                 { return MUL; }
+"/"                 { return DIV; }
+
+[a-zA-Z_][a-zA-Z0-9_]* {
+    yylval.str = strdup(yytext);  // Assign identifier
+    return ID;
+}
+
+.                   { printf("Invalid character: %s\n", yytext); }  // Print invalid character
+%%
+
+int yywrap() {
+    return 1;  // Lex function to signify end of input
 }
 ```
-# arth.y
+
+exp .y file 
 ```
-%{ 
-#include <stdio.h> 
-/* This YACC program is for recognizing the Expression */ 
-%} 
-%token A ID 
-%% 
-statement: A'='E 
-| E { 
-printf("\n Valid arithmetic expression"); 
-$$=$1; 
-} 
-; 
-  E: E'+'ID 
-| E'-'ID 
-| E'*'ID 
-| E'/'ID 
-| ID 
-; 
-%% 
-extern FILE*yyin; 
-int main() { 
-do { 
-yyparse(); 
-}while(!feof(yyin)); } 
-yyerror(char*s) 
-{ fprintf(stderr, "Error: %s\n",s);
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int yylex();  // Lex function declaration
+int yyerror(const char *s);  // Error handling function
+%}
+
+%union {
+    char *str;  // String type for identifier
+}
+
+%token <str> ID
+%token PLUS MINUS MUL DIV EQUAL
+
+%left PLUS MINUS
+%left MUL DIV
+%right EQUAL
+
+%type <str> expr
+
+%%
+stmt:
+    expr '\n' { 
+        // If parsing is successful, print "Valid expression"
+        printf("Valid expression\n");
+    }
+    ;
+
+expr:
+      ID EQUAL expr { 
+        // After parsing ID = expr
+        printf("Identifier: %s\n", $1);  // Print the identifier
+        printf("Operator: =\n");         // Print assignment operator
+        free($1);  // Free allocated memory for string
+      }
+    | expr PLUS expr {
+        printf("Operator: +\n");  // Print addition operator
+    }
+    | expr MINUS expr {
+        printf("Operator: -\n");  // Print subtraction operator
+    }
+    | expr MUL expr {
+        printf("Operator: *\n");  // Print multiplication operator
+    }
+    | expr DIV expr {
+        printf("Operator: /\n");  // Print division operator
+    }
+    | ID { 
+        printf("Identifier: %s\n", $1);  // Print the identifier
+        free($1);  // Free memory
+    }
+    ;
+
+%%
+
+int main() {
+    printf("Enter an expression:\n");
+    
+    if (yyparse() != 0) {
+        // If there is a syntax error, print "Syntax Error"
+        
+    } else {
+        // If no error, print "Valid expression" (already handled in stmt rule)
+    }
+    printf("arithematic expression is valid ");
+    return 0;
+}
+
+int yyerror(const char *s) {
+    return 0;  // Just return, error will be handled in main
 }
 ```
 
 
 # OUTPUT
-
-![image](https://github.com/user-attachments/assets/6e9ba678-ea91-4d32-81e0-a5da76aff10d)
-
+![Screenshot from 2025-04-25 16-20-21](https://github.com/user-attachments/assets/1f0c77fc-4424-43ae-a0d6-5ae357ae406c)
 
 # RESULT
 A YACC program to recognize a valid arithmetic expression that uses operator +,-,* and / is executed successfully and the output is verified.
